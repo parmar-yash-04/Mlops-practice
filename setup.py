@@ -15,5 +15,6 @@ setup(
         "pyyaml",
         "python-dotenv",
         "from_root",
+        "azure-storage-blob",
     ],
 )

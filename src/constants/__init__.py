@@ -24,9 +24,9 @@ TEST_FILE_NAME: str = "test.csv"
 SCHEMA_FILE_PATH = os.path.join("config", "schema.yaml")
 
 
-AWS_ACCESS_KEY_ID_ENV_KEY = "AWS_ACCESS_KEY_ID"
-AWS_SECRET_ACCESS_KEY_ENV_KEY = "AWS_SECRET_ACCESS_KEY"
-REGION_NAME = "us-east-1"
+AZURE_STORAGE_CONNECTION_STRING_KEY = "AZURE_STORAGE_CONNECTION_STRING"
+AZURE_CONTAINER_NAME = "mlops-model-container"
+REGION_NAME = "centralindia"
 
 
 """
@@ -70,8 +70,7 @@ MIN_SAMPLES_SPLIT_RANDOM_STATE: int = 101
 MODEL Evaluation related constants
 """
 MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE: float = 0.02
-MODEL_BUCKET_NAME = "my-model-mlopsproj"
-MODEL_PUSHER_S3_KEY = "model-registry"
+MODEL_PUSHER_BLOB_KEY = "model-registry"
 
 
 APP_HOST = "0.0.0.0"

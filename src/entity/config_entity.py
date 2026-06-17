@@ -24,3 +24,27 @@ class DataTransformationConfig:
     transformed_train_dir: Path
     transformed_test_dir: Path
     preprocessing_obj_path: Path
+
+
+@dataclass
+class ModelTrainerConfig:
+    root_dir: Path
+    trained_model_dir: Path
+    trained_model_path: Path
+    expected_score: float
+    model_config_file_path: Path
+
+
+@dataclass
+class ModelEvaluationConfig:
+    root_dir: Path
+    test_data_path: Path
+    trained_model_path: Path
+    changed_threshold_score: float
+
+
+@dataclass
+class ModelPusherConfig:
+    root_dir: Path
+    trained_model_path: Path
+    preprocessing_obj_path: Path

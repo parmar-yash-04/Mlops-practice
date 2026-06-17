@@ -5,8 +5,25 @@ from src.logger import logging
 from src.components.data_ingestion import DataIngestion
 from src.components.data_validation import DataValidation
 from src.components.data_transformation import DataTransformation
-from src.entity.config_entity import DataIngestionConfig, DataValidationConfig, DataTransformationConfig
-from src.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact, DataTransformationArtifact
+from src.components.model_trainer import ModelTrainer
+from src.components.model_evaluation import ModelEvaluation
+from src.components.model_pusher import ModelPusher
+from src.entity.config_entity import (
+    DataIngestionConfig,
+    DataValidationConfig,
+    DataTransformationConfig,
+    ModelTrainerConfig,
+    ModelEvaluationConfig,
+    ModelPusherConfig,
+)
+from src.entity.artifact_entity import (
+    DataIngestionArtifact,
+    DataValidationArtifact,
+    DataTransformationArtifact,
+    ModelTrainerArtifact,
+    ModelEvaluationArtifact,
+    ModelPusherArtifact,
+)
 from src.constants import *
 
 
@@ -66,6 +83,53 @@ class TrainingPipeline:
                 PREPROCSSING_OBJECT_FILE_NAME
             ),
         )
+        self.model_trainer_config = ModelTrainerConfig(
+            root_dir=ARTIFACT_DIR,
+            trained_model_dir=os.path.join(
+                ARTIFACT_DIR,
+                MODEL_TRAINER_DIR_NAME,
+                MODEL_TRAINER_TRAINED_MODEL_DIR
+            ),
+            trained_model_path=os.path.join(
+                ARTIFACT_DIR,
+                MODEL_TRAINER_DIR_NAME,
+                MODEL_TRAINER_TRAINED_MODEL_DIR,
+                MODEL_TRAINER_TRAINED_MODEL_NAME
+            ),
+            expected_score=MODEL_TRAINER_EXPECTED_SCORE,
+            model_config_file_path=MODEL_TRAINER_MODEL_CONFIG_FILE_PATH,
+        )
+        self.model_evaluation_config = ModelEvaluationConfig(
+            root_dir=ARTIFACT_DIR,
+            test_data_path=os.path.join(
+                ARTIFACT_DIR,
+                DATA_TRANSFORMATION_DIR_NAME,
+                DATA_TRANSFORMATION_TRANSFORMED_DATA_DIR,
+                TEST_FILE_NAME.replace(".csv", ".npy")
+            ),
+            trained_model_path=os.path.join(
+                ARTIFACT_DIR,
+                MODEL_TRAINER_DIR_NAME,
+                MODEL_TRAINER_TRAINED_MODEL_DIR,
+                MODEL_TRAINER_TRAINED_MODEL_NAME
+            ),
+            changed_threshold_score=MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE,
+        )
+        self.model_pusher_config = ModelPusherConfig(
+            root_dir=ARTIFACT_DIR,
+            trained_model_path=os.path.join(
+                ARTIFACT_DIR,
+                MODEL_TRAINER_DIR_NAME,
+                MODEL_TRAINER_TRAINED_MODEL_DIR,
+                MODEL_TRAINER_TRAINED_MODEL_NAME
+            ),
+            preprocessing_obj_path=os.path.join(
+                ARTIFACT_DIR,
+                DATA_TRANSFORMATION_DIR_NAME,
+                DATA_TRANSFORMATION_TRANSFORMED_OBJECT_DIR,
+                PREPROCSSING_OBJECT_FILE_NAME
+            ),
+        )
 
     def start_data_ingestion(self) -> DataIngestionArtifact:
         try:
@@ -112,6 +176,63 @@ class TrainingPipeline:
         except Exception as e:
             raise MyException(e, sys)
 
+    def start_model_trainer(
+        self, data_transformation_artifact: DataTransformationArtifact
+    ) -> ModelTrainerArtifact:
+        try:
+            logging.info("=" * 50)
+            logging.info("Starting Model Trainer")
+            model_trainer = ModelTrainer(
+                model_trainer_config=self.model_trainer_config,
+                data_transformation_artifact=data_transformation_artifact,
+            )
+            artifact = model_trainer.initiate_model_trainer()
+            logging.info(
+                f"Model Trainer completed: Accuracy={artifact.model_accuracy:.4f}, "
+                f"Model={artifact.trained_model_file_path}"
+            )
+            return artifact
+        except Exception as e:
+            raise MyException(e, sys)
+
+    def start_model_evaluation(
+        self,
+        data_transformation_artifact: DataTransformationArtifact,
+        model_trainer_artifact: ModelTrainerArtifact,
+    ) -> ModelEvaluationArtifact:
+        try:
+            logging.info("=" * 50)
+            logging.info("Starting Model Evaluation")
+            model_evaluation = ModelEvaluation(
+                model_evaluation_config=self.model_evaluation_config,
+                data_transformation_artifact=data_transformation_artifact,
+                model_trainer_artifact=model_trainer_artifact,
+            )
+            artifact = model_evaluation.initiate_model_evaluation()
+            logging.info(
+                f"Model Evaluation completed: Accepted={artifact.model_accepted}, "
+                f"Accuracy={artifact.test_accuracy:.4f}"
+            )
+            return artifact
+        except Exception as e:
+            raise MyException(e, sys)
+
+    def start_model_pusher(
+        self, model_evaluation_artifact: ModelEvaluationArtifact
+    ) -> ModelPusherArtifact:
+        try:
+            logging.info("=" * 50)
+            logging.info("Starting Model Pusher")
+            model_pusher = ModelPusher(
+                model_pusher_config=self.model_pusher_config,
+                model_evaluation_artifact=model_evaluation_artifact,
+            )
+            artifact = model_pusher.initiate_model_pusher()
+            logging.info(f"Model Pusher completed: Pushed={artifact.model_pushed}")
+            return artifact
+        except Exception as e:
+            raise MyException(e, sys)
+
     def run_pipeline(self):
         try:
             data_ingestion_artifact = self.start_data_ingestion()
@@ -119,8 +240,18 @@ class TrainingPipeline:
             data_transformation_artifact = self.start_data_transformation(
                 data_ingestion_artifact
             )
+            model_trainer_artifact = self.start_model_trainer(
+                data_transformation_artifact
+            )
+            model_evaluation_artifact = self.start_model_evaluation(
+                data_transformation_artifact,
+                model_trainer_artifact,
+            )
+            model_pusher_artifact = self.start_model_pusher(
+                model_evaluation_artifact
+            )
             logging.info("=" * 50)
             logging.info("Pipeline completed successfully")
-            return data_transformation_artifact
+            return model_pusher_artifact
         except Exception as e:
             raise MyException(e, sys)
