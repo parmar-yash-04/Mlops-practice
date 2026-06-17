@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prediction Result</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="page-wrapper">
+    <header class="app-header">
+      <div class="container">
+        <div class="logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#2563eb"/>
+            <path d="M16 8L16 24M8 16L24 16" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <h1>Loan Approval Predictor</h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="result-card {% if prediction == 'Y' %}approved{% else %}rejected{% endif %}">
+        <div class="result-icon">
+          {% if prediction == 'Y' %}
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="32" fill="#16a34a" fill-opacity="0.15"/>
+            <path d="M20 33L27 40L44 23" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {% else %}
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="32" fill="#dc2626" fill-opacity="0.15"/>
+            <path d="M22 22L42 42M42 22L22 42" stroke="#dc2626" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          {% endif %}
+        </div>
+
+        <h2 class="result-title">
+          {% if prediction == 'Y' %}
+            Loan Approved
+          {% else %}
+            Loan Rejected
+          {% endif %}
+        </h2>
+
+        <p class="result-subtitle">
+          {% if prediction == 'Y' %}
+            Congratulations! Based on the provided information, the applicant is likely to be approved for the loan.
+          {% else %}
+            Unfortunately, based on the provided information, the loan application is likely to be rejected.
+          {% endif %}
+        </p>
+
+        <div class="result-details">
+          <h3>Application Summary</h3>
+          <table class="summary-table">
+            <tr>
+              <td>Gender</td>
+              <td>{{ details.gender }}</td>
+            </tr>
+            <tr>
+              <td>Married</td>
+              <td>{{ details.married }}</td>
+            </tr>
+            <tr>
+              <td>Dependents</td>
+              <td>{{ details.dependents }}</td>
+            </tr>
+            <tr>
+              <td>Education</td>
+              <td>{{ details.education }}</td>
+            </tr>
+            <tr>
+              <td>Self Employed</td>
+              <td>{{ details.self_employed }}</td>
+            </tr>
+            <tr>
+              <td>Applicant Income</td>
+              <td>${{ details.applicant_income }}</td>
+            </tr>
+            <tr>
+              <td>Coapplicant Income</td>
+              <td>${{ details.coapplicant_income }}</td>
+            </tr>
+            <tr>
+              <td>Loan Amount</td>
+              <td>${{ details.loan_amount }}</td>
+            </tr>
+            <tr>
+              <td>Loan Amount Term</td>
+              <td>{{ details.loan_amount_term }} days</td>
+            </tr>
+            <tr>
+              <td>Credit History</td>
+              <td>{{ details.credit_history }}</td>
+            </tr>
+            <tr>
+              <td>Property Area</td>
+              <td>{{ details.property_area }}</td>
+            </tr>
+          </table>
+        </div>
+
+        <a href="/" class="btn btn-primary back-btn">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M7.5 4L3.5 8M3.5 8L7.5 12M3.5 8H16.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          New Prediction
+        </a>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <div class="container">
+        <p>&copy; 2026 MLOps Loan Prediction System</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

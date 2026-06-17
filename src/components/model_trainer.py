@@ -26,6 +26,7 @@ class ModelTrainer:
             logging.info(f"Model config: {model_config}")
 
             rf = RandomForestClassifier(
+                class_weight="balanced",
                 n_estimators=model_config.get("n_estimators", MODEL_TRAINER_N_ESTIMATORS),
                 min_samples_split=model_config.get("min_samples_split", MODEL_TRAINER_MIN_SAMPLES_SPLIT),
                 min_samples_leaf=model_config.get("min_samples_leaf", MODEL_TRAINER_MIN_SAMPLES_LEAF),
