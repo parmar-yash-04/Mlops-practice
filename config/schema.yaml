@@ -38,8 +38,8 @@ domain_values:
     - Male
     - Female
   Married:
-    - Yes
-    - No
+    - "Yes"
+    - "No"
   Dependents:
     - "0"
     - "1"
@@ -49,12 +49,12 @@ domain_values:
     - Graduate
     - Not Graduate
   Self_Employed:
-    - Yes
-    - No
+    - "Yes"
+    - "No"
   Property_Area:
     - Urban
     - Semiurban
     - Rural
   Loan_Status:
-    - Y
-    - N
+    - "Y"
+    - "N"

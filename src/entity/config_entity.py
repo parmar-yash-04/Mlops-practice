@@ -10,3 +10,9 @@ class DataIngestionConfig:
     train_path: Path
     test_path: Path
     test_size: float
+
+
+@dataclass
+class DataValidationConfig:
+    root_dir: Path
+    report_file_path: Path

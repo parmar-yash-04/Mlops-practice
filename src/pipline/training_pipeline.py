@@ -3,8 +3,9 @@ import sys
 from src.exception import MyException
 from src.logger import logging
 from src.components.data_ingestion import DataIngestion
-from src.entity.config_entity import DataIngestionConfig
-from src.entity.artifact_entity import DataIngestionArtifact
+from src.components.data_validation import DataValidation
+from src.entity.config_entity import DataIngestionConfig, DataValidationConfig
+from src.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact
 from src.constants import *
 
 
@@ -37,23 +38,52 @@ class TrainingPipeline:
             ),
             test_size=DATA_INGESTION_TRAIN_TEST_SPLIT_RATIO
         )
+        self.data_validation_config = DataValidationConfig(
+            root_dir=ARTIFACT_DIR,
+            report_file_path=os.path.join(
+                ARTIFACT_DIR,
+                DATA_VALIDATION_DIR_NAME,
+                DATA_VALIDATION_REPORT_FILE_NAME
+            ),
+        )
 
     def start_data_ingestion(self) -> DataIngestionArtifact:
         try:
+            logging.info("=" * 50)
+            logging.info("Starting Data Ingestion")
             data_ingestion = DataIngestion(
                 data_ingestion_config=self.data_ingestion_config
             )
-            return data_ingestion.initiate_data_ingestion()
+            artifact = data_ingestion.initiate_data_ingestion()
+            logging.info(f"Data Ingestion completed: Train={artifact.train_file_path}, Test={artifact.test_file_path}")
+            return artifact
+        except Exception as e:
+            raise MyException(e, sys)
+
+    def start_data_validation(
+        self, data_ingestion_artifact: DataIngestionArtifact
+    ) -> DataValidationArtifact:
+        try:
+            logging.info("=" * 50)
+            logging.info("Starting Data Validation")
+            data_validation = DataValidation(
+                data_validation_config=self.data_validation_config,
+                data_ingestion_artifact=data_ingestion_artifact,
+            )
+            artifact = data_validation.initiate_data_validation()
+            logging.info(f"Data Validation completed: Status={artifact.validation_status}")
+            return artifact
         except Exception as e:
             raise MyException(e, sys)
 
     def run_pipeline(self):
         try:
             data_ingestion_artifact = self.start_data_ingestion()
-            logging.info(
-                f"Pipeline completed. Train: {data_ingestion_artifact.train_file_path}, "
-                f"Test: {data_ingestion_artifact.test_file_path}"
+            data_validation_artifact = self.start_data_validation(
+                data_ingestion_artifact
             )
-            return data_ingestion_artifact
+            logging.info("=" * 50)
+            logging.info("Pipeline completed successfully")
+            return data_validation_artifact
         except Exception as e:
             raise MyException(e, sys)
