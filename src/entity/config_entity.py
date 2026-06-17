@@ -16,3 +16,11 @@ class DataIngestionConfig:
 class DataValidationConfig:
     root_dir: Path
     report_file_path: Path
+
+
+@dataclass
+class DataTransformationConfig:
+    root_dir: Path
+    transformed_train_dir: Path
+    transformed_test_dir: Path
+    preprocessing_obj_path: Path

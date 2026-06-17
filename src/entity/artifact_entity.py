@@ -12,3 +12,10 @@ class DataIngestionArtifact:
 class DataValidationArtifact:
     report_file_path: Path
     validation_status: bool
+
+
+@dataclass
+class DataTransformationArtifact:
+    transformed_train_file_path: Path
+    transformed_test_file_path: Path
+    preprocessing_obj_file_path: Path

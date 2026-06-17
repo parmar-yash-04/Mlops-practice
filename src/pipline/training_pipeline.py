@@ -4,8 +4,9 @@ from src.exception import MyException
 from src.logger import logging
 from src.components.data_ingestion import DataIngestion
 from src.components.data_validation import DataValidation
-from src.entity.config_entity import DataIngestionConfig, DataValidationConfig
-from src.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact
+from src.components.data_transformation import DataTransformation
+from src.entity.config_entity import DataIngestionConfig, DataValidationConfig, DataTransformationConfig
+from src.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact, DataTransformationArtifact
 from src.constants import *
 
 
@@ -46,6 +47,25 @@ class TrainingPipeline:
                 DATA_VALIDATION_REPORT_FILE_NAME
             ),
         )
+        self.data_transformation_config = DataTransformationConfig(
+            root_dir=ARTIFACT_DIR,
+            transformed_train_dir=os.path.join(
+                ARTIFACT_DIR,
+                DATA_TRANSFORMATION_DIR_NAME,
+                DATA_TRANSFORMATION_TRANSFORMED_DATA_DIR
+            ),
+            transformed_test_dir=os.path.join(
+                ARTIFACT_DIR,
+                DATA_TRANSFORMATION_DIR_NAME,
+                DATA_TRANSFORMATION_TRANSFORMED_DATA_DIR
+            ),
+            preprocessing_obj_path=os.path.join(
+                ARTIFACT_DIR,
+                DATA_TRANSFORMATION_DIR_NAME,
+                DATA_TRANSFORMATION_TRANSFORMED_OBJECT_DIR,
+                PREPROCSSING_OBJECT_FILE_NAME
+            ),
+        )
 
     def start_data_ingestion(self) -> DataIngestionArtifact:
         try:
@@ -76,14 +96,31 @@ class TrainingPipeline:
         except Exception as e:
             raise MyException(e, sys)
 
+    def start_data_transformation(
+        self, data_ingestion_artifact: DataIngestionArtifact
+    ) -> DataTransformationArtifact:
+        try:
+            logging.info("=" * 50)
+            logging.info("Starting Data Transformation")
+            data_transformation = DataTransformation(
+                data_transformation_config=self.data_transformation_config,
+                data_ingestion_artifact=data_ingestion_artifact,
+            )
+            artifact = data_transformation.initiate_data_transformation()
+            logging.info(f"Data Transformation completed: Train={artifact.transformed_train_file_path}, Test={artifact.transformed_test_file_path}")
+            return artifact
+        except Exception as e:
+            raise MyException(e, sys)
+
     def run_pipeline(self):
         try:
             data_ingestion_artifact = self.start_data_ingestion()
-            data_validation_artifact = self.start_data_validation(
+            self.start_data_validation(data_ingestion_artifact)
+            data_transformation_artifact = self.start_data_transformation(
                 data_ingestion_artifact
             )
             logging.info("=" * 50)
             logging.info("Pipeline completed successfully")
-            return data_validation_artifact
+            return data_transformation_artifact
         except Exception as e:
             raise MyException(e, sys)
