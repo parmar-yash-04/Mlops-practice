@@ -1,0 +1,8 @@
+psycopg2-binary
+sqlalchemy
+pandas
+numpy
+scikit-learn
+pyyaml
+python-dotenv
+from_root

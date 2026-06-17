@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: mlops
+Version: 0.0.1
+Author: mlops
+Author-email: mlops@gmail.com
+Requires-Dist: psycopg2-binary
+Requires-Dist: sqlalchemy
+Requires-Dist: pandas
+Requires-Dist: numpy
+Requires-Dist: scikit-learn
+Requires-Dist: pyyaml
+Requires-Dist: python-dotenv
+Requires-Dist: from_root
+Dynamic: author
+Dynamic: author-email
+Dynamic: requires-dist

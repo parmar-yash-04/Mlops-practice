@@ -1,0 +1,9 @@
+artifact/
+.env
+__pycache__/
+*.pyc
+logs/
+.vscode/
+.idea/
+``
+project.txt
