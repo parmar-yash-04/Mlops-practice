@@ -8,7 +8,7 @@ from src.entity.artifact_entity import (
     ModelEvaluationArtifact,
     ModelPusherArtifact,
 )
-from src.entity.azure_estimator import AzureEstimator
+from src.entity.local_estimator import LocalEstimator
 
 
 class ModelPusher:
@@ -28,36 +28,31 @@ class ModelPusher:
             model_accepted = self.model_evaluation_artifact.model_accepted
 
             if not model_accepted:
-                logging.info("Model was rejected. Skipping push to Azure Blob.")
+                logging.info("Model was rejected. Skipping push to local registry.")
                 return ModelPusherArtifact(
                     model_pushed=False,
-                    blob_path="",
+                    model_registry_path="",
                 )
 
-            logging.info("Model accepted. Pushing to Azure Blob...")
-            azure_estimator = AzureEstimator()
+            logging.info("Model accepted. Pushing to local registry...")
+            estimator = LocalEstimator()
 
             trained_model_path = self.model_evaluation_artifact.trained_model_path
-            azure_estimator.push_model(trained_model_path)
+            estimator.push_model(trained_model_path)
 
             preprocessing_obj_path = self.model_pusher_config.preprocessing_obj_path
             if os.path.exists(preprocessing_obj_path):
-                preprocessing_blob_key = "preprocessing.pkl"
-                from src.cloud_storage.azure_storage import AzureCloudStorage
-                cloud_storage = AzureCloudStorage()
-                cloud_storage.upload_model(
-                    local_file_path=preprocessing_obj_path,
-                    container_name=AZURE_CONTAINER_NAME,
-                    blob_key=preprocessing_blob_key,
-                )
-                logging.info(f"Preprocessing object uploaded to Azure Blob: {preprocessing_blob_key}")
+                import shutil
+                preprocessing_registry_path = os.path.join(LOCAL_MODEL_REGISTRY_PATH, "preprocessing.pkl")
+                shutil.copy2(preprocessing_obj_path, preprocessing_registry_path)
+                logging.info(f"Preprocessing object saved to local registry: {preprocessing_registry_path}")
 
-            blob_path = f"{AZURE_CONTAINER_NAME}/{MODEL_PUSHER_BLOB_KEY}"
-            logging.info(f"Model pusher completed. Model pushed to: {blob_path}")
+            registry_path = str(os.path.join(LOCAL_MODEL_REGISTRY_PATH, "model.pkl"))
+            logging.info(f"Model pusher completed. Model pushed to: {registry_path}")
 
             return ModelPusherArtifact(
                 model_pushed=True,
-                blob_path=blob_path,
+                model_registry_path=registry_path,
             )
 
         except Exception as e:

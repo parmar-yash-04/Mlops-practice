@@ -40,4 +40,4 @@ class ModelEvaluationArtifact:
 @dataclass
 class ModelPusherArtifact:
     model_pushed: bool
-    blob_path: str
+    model_registry_path: str

@@ -1,4 +1,4 @@
-import sys
+import os, sys
 from flask import Flask, request, render_template
 from src.exception import MyException
 from src.pipline.prediction_pipeline import CustomData, PredictionPipeline
@@ -63,4 +63,5 @@ def server_error(e):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)

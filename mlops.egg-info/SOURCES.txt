@@ -6,8 +6,6 @@ mlops.egg-info/dependency_links.txt
 mlops.egg-info/requires.txt
 mlops.egg-info/top_level.txt
 src/__init__.py
-src/cloud_storage/__init__.py
-src/cloud_storage/azure_storage.py
 src/components/__init__.py
 src/components/data_ingestion.py
 src/components/data_transformation.py
@@ -16,17 +14,15 @@ src/components/model_evaluation.py
 src/components/model_pusher.py
 src/components/model_trainer.py
 src/configuration/__init__.py
-src/configuration/azure_connection.py
 src/configuration/postgres_connection.py
 src/constants/__init__.py
 src/data_access/__init__.py
 src/data_access/proj1_data.py
 src/entity/__init__.py
 src/entity/artifact_entity.py
-src/entity/azure_estimator.py
 src/entity/config_entity.py
 src/entity/estimator.py
-src/entity/s3_estimator.py
+src/entity/local_estimator.py
 src/exception/__init__.py
 src/logger/__init__.py
 src/pipline/__init__.py

@@ -7,8 +7,9 @@ if __name__ == "__main__":
     try:
         pipeline = TrainingPipeline()
         artifact = pipeline.run_pipeline()
-        print(f"Model pushed to Azure: {artifact.model_pushed}")
-        print(f"Blob path: {artifact.blob_path}")
+        print(f"Model pushed: {artifact.model_pushed}")
+        if artifact.model_pushed:
+            print(f"Registry path: {artifact.model_registry_path}")
     except Exception as e:
         logging.error(f"Pipeline failed: {e}")
         raise MyException(e, sys)

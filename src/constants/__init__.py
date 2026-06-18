@@ -24,9 +24,7 @@ TEST_FILE_NAME: str = "test.csv"
 SCHEMA_FILE_PATH = os.path.join("config", "schema.yaml")
 
 
-AZURE_STORAGE_CONNECTION_STRING_KEY = "AZURE_STORAGE_CONNECTION_STRING"
-AZURE_CONTAINER_NAME = "mlops-model-container"
-REGION_NAME = "centralindia"
+LOCAL_MODEL_REGISTRY_PATH = os.path.join("artifact", "model_registry")
 
 
 """

@@ -1,0 +1,17 @@
+.env
+.venv
+venv/
+__pycache__/
+*.pyc
+*.pyo
+artifact/
+logs/
+.git/
+.gitignore
+project.txt
+*.md
+.DS_Store
+.vscode/
+.idea/
+flask_out.txt
+flask_err.txt

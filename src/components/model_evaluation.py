@@ -12,7 +12,7 @@ from src.entity.artifact_entity import (
     ModelEvaluationArtifact,
 )
 from src.utils.main_utils import load_object, load_numpy_array
-from src.entity.azure_estimator import AzureEstimator
+from src.entity.local_estimator import LocalEstimator
 
 
 class ModelEvaluation:
@@ -35,11 +35,11 @@ class ModelEvaluation:
             new_model_accuracy = self.model_trainer_artifact.test_accuracy
             logging.info(f"New model accuracy: {new_model_accuracy:.4f}")
 
-            azure_estimator = AzureEstimator()
-            model_exists_in_blob = azure_estimator.is_model_available()
+            estimator = LocalEstimator()
+            model_exists = estimator.is_model_available()
 
-            if not model_exists_in_blob:
-                logging.info("No existing model found in Azure Blob. Accepting new model.")
+            if not model_exists:
+                logging.info("No existing model found in local registry. Accepting new model.")
                 return ModelEvaluationArtifact(
                     model_accepted=True,
                     changed_accuracy=0.0,
@@ -47,11 +47,11 @@ class ModelEvaluation:
                     test_accuracy=new_model_accuracy,
                 )
 
-            logging.info("Existing model found in Azure Blob. Evaluating...")
+            logging.info("Existing model found in local registry. Evaluating...")
             temp_dir = os.path.join(ARTIFACT_DIR, "temp")
             os.makedirs(temp_dir, exist_ok=True)
             existing_model_path = os.path.join(temp_dir, "existing_model.pkl")
-            azure_estimator.pull_model(existing_model_path)
+            estimator.pull_model(existing_model_path)
             existing_model = load_object(existing_model_path)
 
             test_arr = load_numpy_array(
