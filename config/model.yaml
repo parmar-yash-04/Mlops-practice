@@ -1,12 +1,12 @@
 # Change model_name to switch between models
-model_name: logistic_regression
+model_name: random_forest
 random_state: 101
 
 # Random Forest params
-n_estimators: 2000
-min_samples_split: 7
-min_samples_leaf: 6
-max_depth: 10
+n_estimators: 300
+min_samples_split: 10
+min_samples_leaf: 8
+max_depth: 8
 criterion: entropy
 
 # Logistic Regression params (used when model_name: logistic_regression)

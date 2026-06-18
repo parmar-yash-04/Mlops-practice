@@ -21,6 +21,10 @@ numerical_columns:
   - LoanAmount
   - Loan_Amount_Term
   - Credit_History
+  - TotalIncome
+  - EMI
+  - BalanceIncome
+  - Loan_Income_Ratio
 
 categorical_columns:
   - Gender

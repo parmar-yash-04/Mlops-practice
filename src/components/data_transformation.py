@@ -72,6 +72,14 @@ class DataTransformation:
             logging.info(f"Loaded train data: {train_df.shape}")
             logging.info(f"Loaded test data: {test_df.shape}")
 
+            logging.info("Creating engineered features")
+            for df in [train_df, test_df]:
+                df["TotalIncome"] = df["ApplicantIncome"] + df["CoapplicantIncome"]
+                df["EMI"] = df["LoanAmount"] / (df["Loan_Amount_Term"] / 12)
+                df["BalanceIncome"] = df["TotalIncome"] - (df["EMI"] * 1000)
+                df["Loan_Income_Ratio"] = df["LoanAmount"] / (df["TotalIncome"] + 1)
+            logging.info("Feature engineering completed")
+
             input_feature_train_df = train_df.drop(columns=[target_column] + drop_columns, axis=1)
             target_feature_train_df = train_df[target_column]
             logging.info(f"Train input features shape: {input_feature_train_df.shape}")

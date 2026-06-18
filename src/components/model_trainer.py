@@ -1,12 +1,13 @@
 import os
 import sys
 import numpy as np
+from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score, precision_recall_curve
 from src.constants import *
 from src.exception import MyException
 from src.logger import logging
@@ -32,7 +33,7 @@ class ModelTrainer:
             return LogisticRegression(
                 C=model_config.get("C", 1.0),
                 max_iter=model_config.get("max_iter", 1000),
-                # class_weight="balanced",
+                class_weight="balanced",
                 random_state=random_state,
             )
         elif model_name == "decision_tree":
@@ -108,21 +109,41 @@ class ModelTrainer:
             logging.info(f"Train features: {x_train.shape}, Train target: {y_train.shape}")
             logging.info(f"Test features: {x_test.shape}, Test target: {y_test.shape}")
 
+            model_config = read_yaml(self.model_trainer_config.model_config_file_path)
+            smote = SMOTE(random_state=model_config.get("random_state", 101))
+            x_train, y_train = smote.fit_resample(x_train, y_train)
+            unique, counts = np.unique(y_train, return_counts=True)
+            logging.info(f"After SMOTE - classes: {dict(zip(unique, counts))}")
+
             model = self.train_model(x_train, y_train)
 
             y_train_pred = model.predict(x_train)
+            y_train_prob = model.predict_proba(x_train)[:, 1]
             train_accuracy = accuracy_score(y_train, y_train_pred)
             logging.info(f"Train accuracy: {train_accuracy:.4f}")
 
-            y_test_pred = model.predict(x_test)
+            y_test_prob = model.predict_proba(x_test)[:, 1]
+
+            precisions, recalls, thresholds = precision_recall_curve(y_train, y_train_prob)
+            f1_scores = 2 * (precisions[:-1] * recalls[:-1]) / (precisions[:-1] + recalls[:-1] + 1e-10)
+            best_threshold = thresholds[np.argmax(f1_scores)]
+            logging.info(f"Optimal decision threshold: {best_threshold:.4f}")
+
+            y_test_pred = (y_test_prob >= best_threshold).astype(int)
             test_accuracy = accuracy_score(y_test, y_test_pred)
             test_precision = precision_score(y_test, y_test_pred)
             test_recall = recall_score(y_test, y_test_pred)
             test_f1 = f1_score(y_test, y_test_pred)
+            test_roc_auc = roc_auc_score(y_test, y_test_prob)
             logging.info(f"Test accuracy: {test_accuracy:.4f}")
             logging.info(f"Test precision: {test_precision:.4f}")
             logging.info(f"Test recall: {test_recall:.4f}")
             logging.info(f"Test F1-score: {test_f1:.4f}")
+            logging.info(f"Test ROC-AUC: {test_roc_auc:.4f}")
+
+            cm = confusion_matrix(y_test, y_test_pred)
+            logging.info(f"Confusion matrix:\n{cm}")
+            logging.info(f"Classification report:\n{classification_report(y_test, y_test_pred, target_names=['N', 'Y'])}")
 
             model_accuracy = test_accuracy
 
