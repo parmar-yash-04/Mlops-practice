@@ -1,6 +1,24 @@
-n_estimators: 200
+# Change model_name to switch between models
+model_name: logistic_regression
+random_state: 101
+
+# Random Forest params
+n_estimators: 2000
 min_samples_split: 7
 min_samples_leaf: 6
 max_depth: 10
 criterion: entropy
-random_state: 101
+
+# Logistic Regression params (used when model_name: logistic_regression)
+C: 1.0
+max_iter: 2000
+
+# Gradient Boosting params (used when model_name: gradient_boosting)
+learning_rate: 0.1
+
+# KNN params (used when model_name: knn)
+n_neighbors: 5
+weights: distance
+
+# SVM params (used when model_name: svm)
+kernel: rbf

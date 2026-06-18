@@ -34,7 +34,7 @@ class DataIngestion:
             train_df, test_df = train_test_split(
                 df,
                 test_size=self.data_ingestion_config.test_size,
-                random_state=42
+                random_state=0
             )
             train_path = self.data_ingestion_config.train_path
             test_path = self.data_ingestion_config.test_path

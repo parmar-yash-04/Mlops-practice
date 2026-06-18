@@ -19,18 +19,20 @@ class DataValidation:
         self.data_ingestion_artifact = data_ingestion_artifact
 
     def validate_column_count(self, df: pd.DataFrame, schema: dict) -> bool:
-        expected_count = len(schema["columns"])
+        drop_cols = schema.get("drop_columns", [])
+        expected_count = len(schema["columns"]) - len(drop_cols)
         actual_count = df.shape[1]
         if actual_count != expected_count:
             logging.warning(
-                f"Column count mismatch: expected {expected_count}, got {actual_count}"
+                f"Column count mismatch: expected {expected_count} (after dropping {drop_cols}), got {actual_count}"
             )
             return False
         logging.info(f"Column count validation passed: {actual_count} columns")
         return True
 
     def validate_column_names(self, df: pd.DataFrame, schema: dict) -> bool:
-        expected_columns = [list(col.keys())[0] for col in schema["columns"]]
+        drop_cols = schema.get("drop_columns", [])
+        expected_columns = [list(col.keys())[0] for col in schema["columns"] if list(col.keys())[0] not in drop_cols]
         actual_columns = list(df.columns)
         missing = set(expected_columns) - set(actual_columns)
         extra = set(actual_columns) - set(expected_columns)
@@ -89,6 +91,19 @@ class DataValidation:
                 missing_report[col] = {"missing_count": int(missing_count), "missing_pct": float(missing_pct)}
         return missing_report
 
+    def drop_unnecessary_columns(self, df: pd.DataFrame, schema: dict) -> pd.DataFrame:
+        try:
+            drop_cols = schema.get("drop_columns", [])
+            if drop_cols:
+                existing = [col for col in drop_cols if col in df.columns]
+                if existing:
+                    df = df.drop(columns=existing)
+                    logging.info(f"Dropped columns: {existing}")
+                    logging.info(f"Shape after dropping: {df.shape}")
+            return df
+        except Exception as e:
+            raise MyException(e, sys)
+
     def initiate_data_validation(self) -> DataValidationArtifact:
         try:
             logging.info("Starting data validation")
@@ -98,6 +113,8 @@ class DataValidation:
 
             train_df = pd.read_csv(self.data_ingestion_artifact.train_file_path)
             logging.info(f"Loaded train data with shape: {train_df.shape}")
+
+            train_df = self.drop_unnecessary_columns(train_df, schema)
 
             validation_results = {}
 

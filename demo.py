@@ -6,10 +6,9 @@ import sys
 if __name__ == "__main__":
     try:
         pipeline = TrainingPipeline()
-        artifact = pipeline.run_pipeline()
-        print(f"Model pushed: {artifact.model_pushed}")
-        if artifact.model_pushed:
-            print(f"Registry path: {artifact.model_registry_path}")
+        model_trainer_artifact = pipeline.run_pipeline()
+        print(f"Model trained with accuracy: {model_trainer_artifact.model_accuracy:.4f}")
+        print(f"Model saved at: {model_trainer_artifact.trained_model_file_path}")
     except Exception as e:
         logging.error(f"Pipeline failed: {e}")
         raise MyException(e, sys)

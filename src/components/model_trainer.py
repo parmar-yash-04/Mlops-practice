@@ -1,15 +1,18 @@
 import os
 import sys
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score, f1_score
 from src.constants import *
 from src.exception import MyException
 from src.logger import logging
 from src.entity.config_entity import ModelTrainerConfig
 from src.entity.artifact_entity import DataTransformationArtifact, ModelTrainerArtifact
 from src.utils.main_utils import load_numpy_array, save_object, read_yaml
-
 
 class ModelTrainer:
     def __init__(
@@ -20,23 +23,73 @@ class ModelTrainer:
         self.model_trainer_config = model_trainer_config
         self.data_transformation_artifact = data_transformation_artifact
 
-    def train_model(self, x_train, y_train):
-        try:
-            model_config = read_yaml(self.model_trainer_config.model_config_file_path)
-            logging.info(f"Model config: {model_config}")
+    def get_model(self, model_config: dict):
+        model_name = model_config.get("model_name", "random_forest")
+        random_state = model_config.get("random_state", 101)
 
-            rf = RandomForestClassifier(
+        if model_name == "logistic_regression":
+            logging.info("Selected model: Logistic Regression")
+            return LogisticRegression(
+                C=model_config.get("C", 1.0),
+                max_iter=model_config.get("max_iter", 1000),
+                # class_weight="balanced",
+                random_state=random_state,
+            )
+        elif model_name == "decision_tree":
+            logging.info("Selected model: Decision Tree")
+            return DecisionTreeClassifier(
+                max_depth=model_config.get("max_depth", 10),
+                min_samples_split=model_config.get("min_samples_split", 7),
+                min_samples_leaf=model_config.get("min_samples_leaf", 6),
+                criterion=model_config.get("criterion", "entropy"),
+                class_weight="balanced",
+                random_state=random_state,
+            )
+        elif model_name == "gradient_boosting":
+            logging.info("Selected model: Gradient Boosting")
+            return GradientBoostingClassifier(
+                n_estimators=model_config.get("n_estimators", 100),
+                learning_rate=model_config.get("learning_rate", 0.1),
+                max_depth=model_config.get("max_depth", 5),
+                min_samples_split=model_config.get("min_samples_split", 7),
+                min_samples_leaf=model_config.get("min_samples_leaf", 6),
+                random_state=random_state,
+            )
+        elif model_name == "knn":
+            logging.info("Selected model: K-Neighbors")
+            return KNeighborsClassifier(
+                n_neighbors=model_config.get("n_neighbors", 5),
+                weights=model_config.get("weights", "distance"),
+            )
+        elif model_name == "svm":
+            logging.info("Selected model: SVM")
+            return SVC(
+                C=model_config.get("C", 1.0),
+                kernel=model_config.get("kernel", "rbf"),
+                class_weight="balanced",
+                random_state=random_state,
+            )
+        else:
+            logging.info("Selected model: Random Forest (default)")
+            return RandomForestClassifier(
                 class_weight="balanced",
                 n_estimators=model_config.get("n_estimators", MODEL_TRAINER_N_ESTIMATORS),
                 min_samples_split=model_config.get("min_samples_split", MODEL_TRAINER_MIN_SAMPLES_SPLIT),
                 min_samples_leaf=model_config.get("min_samples_leaf", MODEL_TRAINER_MIN_SAMPLES_LEAF),
                 max_depth=model_config.get("max_depth", None),
                 criterion=model_config.get("criterion", "entropy"),
-                random_state=model_config.get("random_state", 101),
+                random_state=random_state,
             )
-            rf.fit(x_train, y_train)
-            logging.info("RandomForest model trained successfully")
-            return rf
+
+    def train_model(self, x_train, y_train):
+        try:
+            model_config = read_yaml(self.model_trainer_config.model_config_file_path)
+            logging.info(f"Model config: {model_config}")
+
+            model = self.get_model(model_config)
+            model.fit(x_train, y_train)
+            logging.info(f"{type(model).__name__} trained successfully")
+            return model
         except Exception as e:
             raise MyException(e, sys)
 
@@ -63,7 +116,13 @@ class ModelTrainer:
 
             y_test_pred = model.predict(x_test)
             test_accuracy = accuracy_score(y_test, y_test_pred)
+            test_precision = precision_score(y_test, y_test_pred)
+            test_recall = recall_score(y_test, y_test_pred)
+            test_f1 = f1_score(y_test, y_test_pred)
             logging.info(f"Test accuracy: {test_accuracy:.4f}")
+            logging.info(f"Test precision: {test_precision:.4f}")
+            logging.info(f"Test recall: {test_recall:.4f}")
+            logging.info(f"Test F1-score: {test_f1:.4f}")
 
             model_accuracy = test_accuracy
 

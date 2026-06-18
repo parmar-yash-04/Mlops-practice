@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, OrdinalEncoder
 from sklearn.pipeline import Pipeline
 from src.constants import *
 from src.exception import MyException
@@ -42,7 +42,7 @@ class DataTransformation:
             categorical_pipeline = Pipeline(
                 steps=[
                     ("imputer", SimpleImputer(strategy="most_frequent")),
-                    ("one_hot_encoder", OneHotEncoder(handle_unknown="ignore")),
+                    ("label_encoder", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)),
                 ]
             )
 
