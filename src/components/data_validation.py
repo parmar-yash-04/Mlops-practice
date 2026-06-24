@@ -1,6 +1,7 @@
 import os
 import sys
 import pandas as pd
+import mlflow
 from src.constants import *
 from src.exception import MyException
 from src.logger import logging
@@ -141,6 +142,12 @@ class DataValidation:
 
             from src.utils.main_utils import write_yaml
             write_yaml(report_path, report)
+
+            mlflow.log_artifact(report_path, artifact_path="validation")
+            mlflow.log_metrics({
+                "validation_status": 1.0 if validation_status else 0.0,
+                "missing_columns": len(missing_report),
+            })
 
             if validation_status:
                 logging.info("Data validation completed successfully")

@@ -1,6 +1,8 @@
 import os
 import sys
 import numpy as np
+import mlflow
+from mlflow.tracking import MlflowClient
 from sklearn.metrics import accuracy_score
 from src.constants import *
 from src.exception import MyException
@@ -40,6 +42,25 @@ class ModelEvaluation:
 
             if not model_exists:
                 logging.info("No existing model found in local registry. Accepting new model.")
+                mlflow.log_metrics({
+                    "model_accepted": 1.0,
+                    "changed_accuracy": 0.0,
+                })
+                try:
+                    run_id = mlflow.active_run().info.run_id
+                    model_uri = f"runs:/{run_id}/model"
+                    result = mlflow.register_model(model_uri, MLFLOW_REGISTERED_MODEL_NAME)
+                    client = MlflowClient()
+                    client.transition_model_version_stage(
+                        name=MLFLOW_REGISTERED_MODEL_NAME,
+                        version=result.version,
+                        stage="Staging",
+                    )
+                    logging.info(
+                        f"Model registered as {MLFLOW_REGISTERED_MODEL_NAME} v{result.version} and moved to Staging"
+                    )
+                except Exception as reg_e:
+                    logging.warning(f"MLflow model registration failed: {reg_e}")
                 return ModelEvaluationArtifact(
                     model_accepted=True,
                     changed_accuracy=0.0,
@@ -77,6 +98,30 @@ class ModelEvaluation:
                     f"Accuracy change {changed_accuracy:.4f} below threshold {threshold}. Rejecting model."
                 )
                 model_accepted = False
+
+            mlflow.log_metrics({
+                "existing_model_accuracy": round(existing_model_accuracy, 4),
+                "changed_accuracy": round(changed_accuracy, 4),
+                "model_accepted": 1.0 if model_accepted else 0.0,
+            })
+
+            if model_accepted:
+                try:
+                    run_id = mlflow.active_run().info.run_id
+                    model_uri = f"runs:/{run_id}/model"
+                    registered_name = MLFLOW_REGISTERED_MODEL_NAME
+                    result = mlflow.register_model(model_uri, registered_name)
+                    client = MlflowClient()
+                    client.transition_model_version_stage(
+                        name=registered_name,
+                        version=result.version,
+                        alias="Staging",
+                    )
+                    logging.info(
+                        f"Model registered as {registered_name} v{result.version} and moved to Staging"
+                    )
+                except Exception as reg_e:
+                    logging.warning(f"MLflow model registration failed: {reg_e}")
 
             return ModelEvaluationArtifact(
                 model_accepted=model_accepted,

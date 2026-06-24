@@ -73,3 +73,10 @@ MODEL_PUSHER_BLOB_KEY = "model-registry"
 
 APP_HOST = "0.0.0.0"
 APP_PORT = 5000
+
+"""
+MLflow related constants
+"""
+MLFLOW_TRACKING_URI = "sqlite:///mlflow.db"
+MLFLOW_EXPERIMENT_NAME = "LoanPrediction"
+MLFLOW_REGISTERED_MODEL_NAME = "LoanPredictionModel"

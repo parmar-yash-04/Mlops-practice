@@ -8,3 +8,5 @@ python-dotenv
 from_root
 flask
 gunicorn
+mlflow>=2.10.0
+matplotlib

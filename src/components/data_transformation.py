@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+import mlflow
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OrdinalEncoder
@@ -65,6 +66,7 @@ class DataTransformation:
             schema = load_schema()
             target_column = schema["target_column"]
             drop_columns = schema.get("drop_columns", [])
+            numerical_columns = schema["numerical_columns"]
             categorical_columns = schema["categorical_columns"]
 
             train_df = pd.read_csv(self.data_ingestion_artifact.train_file_path)
@@ -124,6 +126,14 @@ class DataTransformation:
             preprocessing_obj_path = self.data_transformation_config.preprocessing_obj_path
             save_object(preprocessing_obj_path, preprocessing_obj)
             logging.info(f"Preprocessing object saved: {preprocessing_obj_path}")
+
+            mlflow.log_params({
+                "engineered_features": str(["TotalIncome", "EMI", "BalanceIncome", "Loan_Income_Ratio"]),
+                "numerical_columns": str(numerical_columns),
+                "categorical_columns": str(categorical_columns),
+                "num_features_after_transform": input_feature_train_arr.shape[1],
+            })
+            mlflow.log_artifact(preprocessing_obj_path, artifact_path="preprocessor")
 
             logging.info("Data Transformation completed successfully")
 

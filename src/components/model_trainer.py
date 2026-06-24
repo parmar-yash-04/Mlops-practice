@@ -1,6 +1,11 @@
 import os
 import sys
 import numpy as np
+import mlflow
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import seaborn as sns
 from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
@@ -110,10 +115,24 @@ class ModelTrainer:
             logging.info(f"Test features: {x_test.shape}, Test target: {y_test.shape}")
 
             model_config = read_yaml(self.model_trainer_config.model_config_file_path)
+            model_name = model_config.get("model_name", "random_forest")
+
+            mlflow.log_params({
+                "model_type": model_name,
+                "random_state": model_config.get("random_state", 101),
+                "smote_applied": True,
+            })
+            model_specific_params = {k: v for k, v in model_config.items() if k not in ["model_name", "random_state"]}
+            mlflow.log_params(model_specific_params)
+
             smote = SMOTE(random_state=model_config.get("random_state", 101))
             x_train, y_train = smote.fit_resample(x_train, y_train)
             unique, counts = np.unique(y_train, return_counts=True)
             logging.info(f"After SMOTE - classes: {dict(zip(unique, counts))}")
+            mlflow.log_metrics({
+                "smote_samples_majority": int(counts.max()),
+                "smote_samples_minority": int(counts.min()),
+            })
 
             model = self.train_model(x_train, y_train)
 
@@ -141,9 +160,33 @@ class ModelTrainer:
             logging.info(f"Test F1-score: {test_f1:.4f}")
             logging.info(f"Test ROC-AUC: {test_roc_auc:.4f}")
 
+            mlflow.log_metrics({
+                "train_accuracy": round(train_accuracy, 4),
+                "test_accuracy": round(test_accuracy, 4),
+                "test_precision": round(test_precision, 4),
+                "test_recall": round(test_recall, 4),
+                "test_f1": round(test_f1, 4),
+                "test_roc_auc": round(test_roc_auc, 4),
+                "best_threshold": round(best_threshold, 4),
+            })
+
             cm = confusion_matrix(y_test, y_test_pred)
             logging.info(f"Confusion matrix:\n{cm}")
             logging.info(f"Classification report:\n{classification_report(y_test, y_test_pred, target_names=['N', 'Y'])}")
+
+            fig, ax = plt.subplots(figsize=(6, 5))
+            sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["N", "Y"], yticklabels=["N", "Y"], ax=ax)
+            ax.set_xlabel("Predicted")
+            ax.set_ylabel("Actual")
+            ax.set_title("Confusion Matrix")
+            mlflow.log_figure(fig, "confusion_matrix.png")
+            plt.close(fig)
+
+            report_str = classification_report(y_test, y_test_pred, target_names=["N", "Y"])
+            report_path = os.path.join(self.model_trainer_config.trained_model_dir, "classification_report.txt")
+            with open(report_path, "w") as f:
+                f.write(report_str)
+            mlflow.log_artifact(report_path, artifact_path="metrics")
 
             model_accuracy = test_accuracy
 
@@ -159,6 +202,12 @@ class ModelTrainer:
             save_object(trained_model_path, model)
             logging.info(f"Model saved: {trained_model_path}")
 
+            mlflow.sklearn.log_model(
+                sk_model=model,
+                name="model",
+                input_example=x_test[:5],
+            )
+            mlflow.log_artifact(trained_model_path, artifact_path="model")
             logging.info("Model Trainer completed successfully")
 
             return ModelTrainerArtifact(
